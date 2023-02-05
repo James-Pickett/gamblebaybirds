@@ -1,0 +1,4 @@
+baseURL = 'https://james-pickett.github.io/gamblebaybirds'
+languageCode = 'en-us'
+title = 'My New Hugo Site'
+theme = 'ananke'
