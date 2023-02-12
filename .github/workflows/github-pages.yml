@@ -31,7 +31,7 @@ jobs:
       - name: Install PostCSS-CLI
         run: npm install postcss-cli -g
 
-      # - uses: actions/setup-go@v3
+      - uses: actions/setup-go@v3
 
       - name: Setup Hugo
         uses: peaceiris/actions-hugo@v2
@@ -39,7 +39,9 @@ jobs:
           hugo-version: 'latest'
           extended: true
 
-      # - run: "cd ./postgen && go run ."
+      - run: "cd ./postgen && go run ."
+        env:
+          GCP_CREDENTIALS_B64: ${{ secrets.GCP_CREDENTIALS_B64 }}
 
       - name: Build
         run: hugo --minify

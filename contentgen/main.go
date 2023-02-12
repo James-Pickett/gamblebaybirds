@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"os"
@@ -20,9 +21,7 @@ const (
 )
 
 func main() {
-	ctx := context.Background()
-
-	driveService, err := drive.NewService(ctx, option.WithCredentialsFile("/Users/jamespickett/.gamblebaybirds/gcp-credentials.json"))
+	driveService, err := driveService()
 	if err != nil {
 		panic(err)
 	}
@@ -189,4 +188,23 @@ func generatePostMd(imagePaths []string) string {
 	}
 	sb.WriteString("{{< /gallery-grid >}}\n")
 	return sb.String()
+}
+
+func driveService() (*drive.Service, error) {
+	// first check for b64 env var
+	b64Creds := os.Getenv("GCP_CREDENTIALS")
+	if b64Creds != "" {
+		creds, err := base64.StdEncoding.DecodeString(b64Creds)
+		if err != nil {
+			return nil, err
+		}
+		return drive.NewService(context.Background(), option.WithCredentialsJSON(creds))
+	}
+
+	homedir, err := os.UserHomeDir()
+	if err != nil {
+		return nil, err
+	}
+
+	return drive.NewService(context.Background(), option.WithCredentialsFile(filepath.Join(homedir, ".gamblebaybirds", "gcp-credentials.json")))
 }
