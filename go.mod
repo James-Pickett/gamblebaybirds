@@ -1,4 +1,4 @@
-module postgen
+module contentgen
 
 go 1.19
 

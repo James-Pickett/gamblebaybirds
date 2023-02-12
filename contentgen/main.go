@@ -27,56 +27,51 @@ func main() {
 		panic(err)
 	}
 
-	todoFolder, err := getFileByName(todoFolderName, driveService)
+	todoDriveFolder, err := getFileByName(todoFolderName, driveService)
 	if err != nil {
 		panic(err)
 	}
 
-	todoFiles, err := getChildren(todoFolder, driveService)
+	todoDriveFiles, err := getChildren(todoDriveFolder, driveService)
 	if err != nil {
 		panic(err)
 	}
 
-	if len(todoFiles) == 0 {
+	if len(todoDriveFiles) == 0 {
 		fmt.Print("\nno new files found to process\n")
 		os.Exit(0)
 	}
 
-	doneFolder, err := getFileByName(doneFolderName, driveService)
+	doneDriveFolder, err := getFileByName(doneFolderName, driveService)
 	if err != nil {
 		panic(err)
 	}
 
-	doneSubFolder, err := createDailyDoneSubFolderIfNotExists(doneFolder, driveService)
+	doneDriveSubFolder, err := createDailyDoneSubFolderIfNotExists(doneDriveFolder, driveService)
 	if err != nil {
 		panic(err)
 	}
 
-	newPostFolderPath := filepath.Join("./", "content", "moments", date())
-	if err := os.MkdirAll(newPostFolderPath, os.ModePerm); err != nil {
+	newPostFolderFilePath := filepath.Join("./", "content", "en-us", "posts", date())
+	if err := os.MkdirAll(newPostFolderFilePath, os.ModePerm); err != nil {
 		panic(err)
 	}
 
-	newPostImagesFolderPath := filepath.Join(newPostFolderPath, "images")
-	if err := os.MkdirAll(newPostImagesFolderPath, os.ModePerm); err != nil {
-		panic(err)
-	}
-
-	entries, err := os.ReadDir(newPostImagesFolderPath)
+	entries, err := os.ReadDir(newPostFolderFilePath)
 	if err != nil {
 		panic(err)
 	}
 
-	var imagePaths []string
+	var imageNames []string
 
 	for _, entry := range entries {
-		if entry.IsDir() {
+		if entry.IsDir() || strings.HasSuffix(entry.Name(), ".png") {
 			continue
 		}
-		imagePaths = append(imagePaths, filepath.Join("moments", date(), "images", entry.Name()))
+		imageNames = append(imageNames, entry.Name())
 	}
 
-	for _, file := range todoFiles {
+	for _, file := range todoDriveFiles {
 		newFileName := strings.ReplaceAll(file.Name, " ", "_")
 
 		response, err := driveService.Files.Get(file.Id).Download()
@@ -85,9 +80,9 @@ func main() {
 		}
 		defer response.Body.Close()
 
-		imagePath := filepath.Join(newPostImagesFolderPath, newFileName)
-		imagePaths = append(imagePaths, filepath.Join("moments", date(), "images", newFileName))
+		imageNames = append(imageNames, newFileName)
 
+		imagePath := filepath.Join(newPostFolderFilePath, newFileName)
 		dstFile, err := os.Create(imagePath)
 		if err != nil {
 			panic(err)
@@ -98,18 +93,18 @@ func main() {
 			panic(err)
 		}
 
-		_, err = driveService.Files.Update(file.Id, &drive.File{Name: newFileName}).RemoveParents(todoFolder.Id).AddParents(doneSubFolder.Id).Do()
+		_, err = driveService.Files.Update(file.Id, &drive.File{Name: newFileName}).RemoveParents(todoDriveFolder.Id).AddParents(doneDriveSubFolder.Id).Do()
 		if err != nil {
 			panic(err)
 		}
 	}
 
-	newPostMdPath := filepath.Join(newPostFolderPath, fmt.Sprintf("%s.md", date()))
+	newPostMdPath := filepath.Join(newPostFolderFilePath, "index.md")
 	dstFile, err := os.Create(newPostMdPath)
 	if err != nil {
 		panic(err)
 	}
-	_, err = io.Copy(dstFile, strings.NewReader(generatePostMd(imagePaths)))
+	_, err = io.Copy(dstFile, strings.NewReader(generatePostMd(imageNames)))
 	if err != nil {
 		panic(err)
 	}
@@ -174,14 +169,24 @@ func date() string {
 
 func generatePostMd(imagePaths []string) string {
 	var sb strings.Builder
-	sb.WriteString("---\n")
-	sb.WriteString(fmt.Sprintf("name: %s\n", date()))
-	sb.WriteString(fmt.Sprintf("date: %s\n", time.Now().Format(time.RFC3339)))
-	sb.WriteString("pictures:\n")
 
-	for _, imagePath := range imagePaths {
-		sb.WriteString(fmt.Sprintf("  - %s\n", imagePath))
-	}
 	sb.WriteString("---\n")
+
+	sb.WriteString(fmt.Sprintf("date: %s\n", time.Now().Format(time.RFC3339)))
+	sb.WriteString(fmt.Sprintf("featured_image: %s\n", imagePaths[0]))
+	sb.WriteString("summary: =)\n")
+	sb.WriteString("layout: gallery\n")
+
+	// TODO: get more tags and add descriptions
+	sb.WriteString("tags:\n")
+	sb.WriteString(fmt.Sprintf("  - %s\n", "Bird"))
+
+	sb.WriteString("---\n")
+
+	sb.WriteString("{{< gallery-grid >}}\n")
+	for _, path := range imagePaths {
+		sb.WriteString(fmt.Sprintf("![%s](%s)\n", path, path))
+	}
+	sb.WriteString("{{< /gallery-grid >}}\n")
 	return sb.String()
 }
