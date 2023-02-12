@@ -37,7 +37,7 @@ jobs:
         uses: peaceiris/actions-hugo@v2
         with:
           hugo-version: 'latest'
-          # extended: true
+          extended: true
 
       # - run: "cd ./postgen && go run ."
 
