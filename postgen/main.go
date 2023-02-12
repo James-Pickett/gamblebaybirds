@@ -14,11 +14,14 @@ import (
 )
 
 const (
-	todoFolderName, doneFolderName = "gamblebaybirds", "gamblebaybirds-processed"
+	todoFolderName   = "gamblebaybirds"
+	doneFolderName   = "gamblebaybirds-processed"
+	hugoPostBasePath = "content/en-us/posts"
 )
 
 func main() {
 	ctx := context.Background()
+
 	driveService, err := drive.NewService(ctx, option.WithCredentialsFile("/Users/jamespickett/.gamblebaybirds/gcp-credentials.json"))
 	if err != nil {
 		panic(err)
@@ -35,8 +38,8 @@ func main() {
 	}
 
 	if len(todoFiles) == 0 {
-		fmt.Print("\nno new files found to process")
-		os.Exit(1)
+		fmt.Print("\nno new files found to process\n")
+		os.Exit(0)
 	}
 
 	doneFolder, err := getFileByName(doneFolderName, driveService)
@@ -44,12 +47,12 @@ func main() {
 		panic(err)
 	}
 
-	doneSubFodler, err := createDailyDoneSubFolderIfNotExists(doneFolder, driveService)
+	doneSubFolder, err := createDailyDoneSubFolderIfNotExists(doneFolder, driveService)
 	if err != nil {
 		panic(err)
 	}
 
-	newPostFolderPath := filepath.Join(rootDir(), "content", "moments", date())
+	newPostFolderPath := filepath.Join("./", "content", "moments", date())
 	if err := os.MkdirAll(newPostFolderPath, os.ModePerm); err != nil {
 		panic(err)
 	}
@@ -95,7 +98,7 @@ func main() {
 			panic(err)
 		}
 
-		_, err = driveService.Files.Update(file.Id, &drive.File{Name: newFileName}).RemoveParents(todoFolder.Id).AddParents(doneSubFodler.Id).Do()
+		_, err = driveService.Files.Update(file.Id, &drive.File{Name: newFileName}).RemoveParents(todoFolder.Id).AddParents(doneSubFolder.Id).Do()
 		if err != nil {
 			panic(err)
 		}
@@ -167,19 +170,6 @@ func getFileByName(name string, service *drive.Service, parents ...string) (*dri
 
 func date() string {
 	return time.Now().Format("2006-01-02")
-}
-
-func rootDir() string {
-	path, err := os.Getwd()
-	if err != nil {
-		panic(err)
-	}
-
-	if filepath.Base(path) == "postgen" {
-		return "../"
-	}
-
-	return "./"
 }
 
 func generatePostMd(imagePaths []string) string {

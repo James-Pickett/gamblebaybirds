@@ -17,7 +17,21 @@ jobs:
           submodules: true  # Fetch Hugo themes (true OR recursive)
           fetch-depth: 0    # Fetch all history for .GitInfo and .Lastmod
 
-      - uses: actions/setup-go@v3
+      - name: Set git config core.quotepath false # https://github.com/gohugoio/hugo/issues/9810#issuecomment-1107519804
+        run: git config --global core.quotepath false
+
+      - name: Use Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: '16.x'
+
+      - name: Install Theme
+        run: cd themes/hugo-theme-luna && yarn install --production
+
+      - name: Install PostCSS-CLI
+        run: npm install postcss-cli -g
+
+      # - uses: actions/setup-go@v3
 
       - name: Setup Hugo
         uses: peaceiris/actions-hugo@v2
@@ -25,7 +39,7 @@ jobs:
           hugo-version: 'latest'
           # extended: true
 
-      - run: "cd ./postgen && go run ."
+      # - run: "cd ./postgen && go run ."
 
       - name: Build
         run: hugo --minify

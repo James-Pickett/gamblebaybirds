@@ -1,0 +1,26 @@
+{{- define "main" -}}
+    <div class="page-gallery">
+        <div class=" border-b py-8 text-center dark:border-darkBorder">
+            <div class=" text-4xl font-bold">{{- .Title -}}</div>
+            <div class="mt-4 flex items-center justify-center text-xs text-gray-400">
+                {{- if .Params.tags -}}
+                    <div class=" flex items-center">
+                        {{- range .Params.tags -}}
+                            <a href="{{- "/tags/" | relLangURL -}}{{- . | urlize -}}" title="{{- . -}}" class="group mr-2 flex items-center">
+                                <i class="mr-1  group-hover:text-theme">#</i>
+                                <span class=" group-hover:text-theme"> {{- . -}}</span>
+                            </a>
+                        {{- end -}}
+                    </div>
+                {{- end -}}
+            </div>
+            <!-- <div class="my-6 text-gray-100 dark:text-gray-600">|</div> -->
+        </div>
+        <div class="">{{- .Content -}}</div>
+        <div class=" my-10 text-center text-gray-300">- <span class="mx-2">End</span> -</div>
+
+        {{- if eq .Type "posts" -}}
+            {{- partial "article/components/footer" . }}
+        {{- end -}}
+    </div>
+{{- end -}}
