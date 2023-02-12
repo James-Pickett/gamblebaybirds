@@ -1,4 +1,10 @@
 baseURL = 'https://james-pickett.github.io/gamblebaybirds'
 languageCode = 'en-us'
-title = 'My New Hugo Site'
-theme = 'ananke'
+theme = "moments"
+paginate = 10
+paginatePath = '.'
+
+[params]
+    title = "Gamble Bay Birds"
+    name = "Default User"
+    avatar = "/img/default_avatar.png"

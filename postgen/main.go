@@ -3,7 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"google.golang.org/api/drive/v3"
@@ -46,31 +49,84 @@ func main() {
 		panic(err)
 	}
 
+	newPostFolderPath := filepath.Join(rootDir(), "content", "moments", date())
+	if err := os.MkdirAll(newPostFolderPath, os.ModePerm); err != nil {
+		panic(err)
+	}
+
+	newPostImagesFolderPath := filepath.Join(newPostFolderPath, "images")
+	if err := os.MkdirAll(newPostImagesFolderPath, os.ModePerm); err != nil {
+		panic(err)
+	}
+
+	entries, err := os.ReadDir(newPostImagesFolderPath)
+	if err != nil {
+		panic(err)
+	}
+
+	var imagePaths []string
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		imagePaths = append(imagePaths, filepath.Join("moments", date(), "images", entry.Name()))
+	}
+
 	for _, file := range todoFiles {
-		_, err := driveService.Files.Update(file.Id, &drive.File{}).RemoveParents(todoFolder.Id).AddParents(doneSubFodler.Id).Do()
+		newFileName := strings.ReplaceAll(file.Name, " ", "_")
+
+		response, err := driveService.Files.Get(file.Id).Download()
+		if err != nil {
+			panic(err)
+		}
+		defer response.Body.Close()
+
+		imagePath := filepath.Join(newPostImagesFolderPath, newFileName)
+		imagePaths = append(imagePaths, filepath.Join("moments", date(), "images", newFileName))
+
+		dstFile, err := os.Create(imagePath)
+		if err != nil {
+			panic(err)
+		}
+
+		_, err = io.Copy(dstFile, response.Body)
+		if err != nil {
+			panic(err)
+		}
+
+		_, err = driveService.Files.Update(file.Id, &drive.File{Name: newFileName}).RemoveParents(todoFolder.Id).AddParents(doneSubFodler.Id).Do()
 		if err != nil {
 			panic(err)
 		}
 	}
+
+	newPostMdPath := filepath.Join(newPostFolderPath, fmt.Sprintf("%s.md", date()))
+	dstFile, err := os.Create(newPostMdPath)
+	if err != nil {
+		panic(err)
+	}
+	_, err = io.Copy(dstFile, strings.NewReader(generatePostMd(imagePaths)))
+	if err != nil {
+		panic(err)
+	}
 }
 
 func createDailyDoneSubFolderIfNotExists(parent *drive.File, driveService *drive.Service) (*drive.File, error) {
-	fileName := time.Now().Format("2006-01-02")
-
 	// test to see if file already exists
-	file, err := getFileByName(fileName, driveService, parent.Id)
+	file, err := getFileByName(date(), driveService, parent.Id)
 	if err == nil {
 		return file, nil
 	}
 
 	file, err = driveService.Files.Create(&drive.File{
 		MimeType: "application/vnd.google-apps.folder",
-		Name:     fileName,
+		Name:     date(),
 		Parents:  []string{parent.Id},
 	}).SupportsAllDrives(true).Do()
 
 	if err != nil {
-		return nil, fmt.Errorf("creating folder %s: %w", fileName, err)
+		return nil, fmt.Errorf("creating folder %s: %w", date(), err)
 	}
 
 	return file, nil
@@ -107,4 +163,35 @@ func getFileByName(name string, service *drive.Service, parents ...string) (*dri
 	}
 
 	return list.Files[0], nil
+}
+
+func date() string {
+	return time.Now().Format("2006-01-02")
+}
+
+func rootDir() string {
+	path, err := os.Getwd()
+	if err != nil {
+		panic(err)
+	}
+
+	if filepath.Base(path) == "postgen" {
+		return "../"
+	}
+
+	return "./"
+}
+
+func generatePostMd(imagePaths []string) string {
+	var sb strings.Builder
+	sb.WriteString("---\n")
+	sb.WriteString(fmt.Sprintf("name: %s\n", date()))
+	sb.WriteString(fmt.Sprintf("date: %s\n", time.Now().Format(time.RFC3339)))
+	sb.WriteString("pictures:\n")
+
+	for _, imagePath := range imagePaths {
+		sb.WriteString(fmt.Sprintf("  - %s\n", imagePath))
+	}
+	sb.WriteString("---\n")
+	return sb.String()
 }

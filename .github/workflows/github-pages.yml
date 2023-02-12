@@ -17,14 +17,20 @@ jobs:
           submodules: true  # Fetch Hugo themes (true OR recursive)
           fetch-depth: 0    # Fetch all history for .GitInfo and .Lastmod
 
+      - uses: actions/setup-go@v3
+
       - name: Setup Hugo
         uses: peaceiris/actions-hugo@v2
         with:
           hugo-version: 'latest'
           # extended: true
 
+      - run: "cd ./postgen && go run ."
+
       - name: Build
         run: hugo --minify
+
+      - run: "git add -A && git commit -m 'automated commit after content update' && git push"
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
