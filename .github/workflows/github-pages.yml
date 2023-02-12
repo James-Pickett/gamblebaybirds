@@ -39,7 +39,7 @@ jobs:
           hugo-version: 'latest'
           extended: true
 
-      - run: "cd ./postgen && go run ."
+      - run: go run ./contentgen/
         env:
           GCP_CREDENTIALS_B64: ${{ secrets.GCP_CREDENTIALS_B64 }}
 

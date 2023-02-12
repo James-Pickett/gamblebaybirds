@@ -192,7 +192,7 @@ func generatePostMd(imagePaths []string) string {
 
 func driveService() (*drive.Service, error) {
 	// first check for b64 env var
-	b64Creds := os.Getenv("GCP_CREDENTIALS")
+	b64Creds := os.Getenv("GCP_CREDENTIALS_B64")
 	if b64Creds != "" {
 		creds, err := base64.StdEncoding.DecodeString(b64Creds)
 		if err != nil {
