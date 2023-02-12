@@ -46,8 +46,6 @@ jobs:
       - name: Build
         run: hugo --minify
 
-      # - run: "git add -A && git commit -m 'automated commit after content update' && git push"
-
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
         if: github.ref == 'refs/heads/main'

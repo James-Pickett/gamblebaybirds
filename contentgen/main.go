@@ -64,7 +64,7 @@ func main() {
 	var imageNames []string
 
 	for _, entry := range entries {
-		if entry.IsDir() || strings.HasSuffix(entry.Name(), ".png") {
+		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".png") {
 			continue
 		}
 		imageNames = append(imageNames, entry.Name())

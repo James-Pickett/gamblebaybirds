@@ -10,48 +10,38 @@ function countFiles(folderName) {
   return count;
 }
 
-function checkProperty(propertyName, newProperty) {
-  newProperty = newProperty.toString();
-  const oldProperty = PropertiesService.getScriptProperties().getProperty(propertyName);
-  PropertiesService.getScriptProperties().setProperty(propertyName, newProperty);
-
-  if (newProperty == "0") {
-    return false;
-  }
-
-  return newProperty != oldProperty;
-}
-
 function dispatchGithubWorkflow() {
   var data = {
-    'ref': 'main'
+    ref: "main",
   };
 
-  const ghToken = PropertiesService.getScriptProperties().getProperty('gh_token');
+  const ghToken =
+    PropertiesService.getScriptProperties().getProperty("gh_token");
 
   var options = {
-    'method' : 'post',
-    'contentType': 'application/json',
-    'headers' : { 
-      'Accept': 'application/vnd.github+json', 
-      'Authorization': `Bearer ${ghToken}`, 
-      'X-GitHub-Api-Version': '2022-11-28', 
-      'Content-Type': 'application/json'
+    method: "post",
+    contentType: "application/json",
+    headers: {
+      Accept: "application/vnd.github+json",
+      Authorization: `Bearer ${ghToken}`,
+      "X-GitHub-Api-Version": "2022-11-28",
+      "Content-Type": "application/json",
     },
-    'payload' : JSON.stringify(data)
+    payload: JSON.stringify(data),
   };
 
-  UrlFetchApp.fetch('https://api.github.com/repos/james-pickett/gamblebaybirds/actions/workflows/github-pages.yml/dispatches', options);
+  UrlFetchApp.fetch(
+    "https://api.github.com/repos/james-pickett/gamblebaybirds/actions/workflows/github-pages.yml/dispatches",
+    options
+  );
 }
 
 function mainFunction() {
   const fileCount = countFiles("gamblebaybirds");
-  const runCode = checkProperty("file_count", fileCount);
-
-  if (!runCode){
-    return
+  if (fileCount == 0) {
+    return;
   }
-  
+
   console.log("dispatching ");
   dispatchGithubWorkflow();
 }
