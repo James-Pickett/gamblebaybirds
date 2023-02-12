@@ -54,3 +54,5 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./public
+
+      - uses: stefanzweifel/git-auto-commit-action@v4
